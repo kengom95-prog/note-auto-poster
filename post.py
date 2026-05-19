@@ -69,9 +69,9 @@ def post_to_note(title: str, body: str) -> None:
         page.fill(email_sel, email)
         page.fill('input[type="password"]', password)
         page.click('button:has-text("ログイン")')
-        page.wait_for_load_state("networkidle")
-
-        if "/login" in page.url:
+        try:
+            page.wait_for_url(lambda url: "/login" not in url, timeout=20000)
+        except PlaywrightTimeout:
             page.screenshot(path="/tmp/note_login_fail.png")
             raise RuntimeError("ログイン失敗。メール・パスワードを確認してください。")
 
