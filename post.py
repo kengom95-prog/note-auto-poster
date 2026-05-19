@@ -64,11 +64,11 @@ def post_to_note(title: str, body: str) -> None:
         page.wait_for_load_state("networkidle")
         page.screenshot(path="/tmp/note_login.png")
 
-        email_sel = 'input[name="email"], input[type="email"], input[placeholder*="メール"]'
+        email_sel = 'input[placeholder*="mail@example.com"]'
         page.wait_for_selector(email_sel, timeout=15000)
         page.fill(email_sel, email)
-        page.fill('input[name="password"], input[type="password"]', password)
-        page.click('button[type="submit"]')
+        page.fill('input[type="password"]', password)
+        page.click('button:has-text("ログイン")')
         page.wait_for_load_state("networkidle")
 
         if "/login" in page.url:
