@@ -62,13 +62,17 @@ def post_to_note(title: str, body: str) -> None:
         # ログイン
         page.goto("https://note.com/login?redirectPath=%2F")
         page.wait_for_load_state("networkidle")
+        page.screenshot(path="/tmp/note_login.png")
 
-        page.fill('input[name="email"]', email)
-        page.fill('input[name="password"]', password)
+        email_sel = 'input[name="email"], input[type="email"], input[placeholder*="メール"]'
+        page.wait_for_selector(email_sel, timeout=15000)
+        page.fill(email_sel, email)
+        page.fill('input[name="password"], input[type="password"]', password)
         page.click('button[type="submit"]')
         page.wait_for_load_state("networkidle")
 
         if "/login" in page.url:
+            page.screenshot(path="/tmp/note_login_fail.png")
             raise RuntimeError("ログイン失敗。メール・パスワードを確認してください。")
 
         # 新規記事作成
