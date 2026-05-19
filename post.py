@@ -1,17 +1,17 @@
 import os
 import sys
 import requests
-import xml.etree.ElementTree as ET
 import anthropic
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
 
 def get_trending_topics() -> list[str]:
-    url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=JP"
+    url = "https://www3.nhk.or.jp/rss/news/cat0.xml"
+    import xml.etree.ElementTree as ET
     res = requests.get(url, timeout=10)
+    res.raise_for_status()
     root = ET.fromstring(res.content)
-    titles = [item.find("title").text for item in root.iter("item")]
-    return titles[:5]
+    return [item.find("title").text for item in root.iter("item")][:5]
 
 
 def generate_article(topics: list[str]) -> tuple[str, str]:
@@ -26,9 +26,9 @@ def generate_article(topics: list[str]) -> tuple[str, str]:
         messages=[
             {
                 "role": "user",
-                "content": f"""今日の日本のトレンドキーワードを元に、note.com 向けの記事を1つ書いてください。
+                "content": f"""今日の日本のニュースを元に、note.com 向けの記事を1つ書いてください。
 
-トレンドキーワード（上位5位）:
+今日のNHKトップニュース（上位5件）:
 {topics_str}
 
 フォーマット（必ずこの形式で出力）:
