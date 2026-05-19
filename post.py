@@ -1,14 +1,17 @@
 import os
 import sys
+import requests
+import xml.etree.ElementTree as ET
 import anthropic
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
-from pytrends.request import TrendReq
 
 
 def get_trending_topics() -> list[str]:
-    pytrends = TrendReq(hl="ja-JP", tz=540)
-    df = pytrends.trending_searches(pn="japan")
-    return df[0].tolist()[:5]
+    url = "https://trends.google.com/trends/trendingsearches/daily/rss?geo=JP"
+    res = requests.get(url, timeout=10)
+    root = ET.fromstring(res.content)
+    titles = [item.find("title").text for item in root.iter("item")]
+    return titles[:5]
 
 
 def generate_article(topics: list[str]) -> tuple[str, str]:
