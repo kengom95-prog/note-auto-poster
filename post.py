@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import requests
@@ -49,31 +50,31 @@ def generate_article(topics: list[str]) -> tuple[str, str]:
 
 
 def post_to_note(title: str, body: str) -> None:
-    email = os.environ["NOTE_EMAIL"]
-    password = os.environ["NOTE_PASSWORD"]
+    cookies_json = os.environ.get("NOTE_COOKIES")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         )
+
+        if cookies_json:
+            context.add_cookies(json.loads(cookies_json))
+        else:
+            raise RuntimeError(
+                "NOTE_COOKIES が設定されていません。"
+                "get_cookies.py をローカルで実行してクッキーを取得し、"
+                "GitHub Secrets の NOTE_COOKIES に設定してください。"
+            )
+
         page = context.new_page()
 
-        # ログイン
-        page.goto("https://note.com/login?redirectPath=%2F")
+        # ログイン確認
+        page.goto("https://note.com/")
         page.wait_for_load_state("networkidle")
-        page.screenshot(path="/tmp/note_login.png")
-
-        email_sel = 'input[placeholder*="mail@example.com"]'
-        page.wait_for_selector(email_sel, timeout=15000)
-        page.fill(email_sel, email)
-        page.fill('input[type="password"]', password)
-        page.click('button:has-text("ログイン")')
-        try:
-            page.wait_for_url(lambda url: "/login" not in url, timeout=20000)
-        except PlaywrightTimeout:
+        if "/login" in page.url:
             page.screenshot(path="/tmp/note_login_fail.png")
-            raise RuntimeError("ログイン失敗。メール・パスワードを確認してください。")
+            raise RuntimeError("クッキーが無効または期限切れです。get_cookies.py を再実行してください。")
 
         # 新規記事作成
         page.goto("https://note.com/notes/new")
